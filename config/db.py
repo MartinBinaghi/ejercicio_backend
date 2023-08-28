@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, create_engine, MetaData
+from sqlalchemy import create_engine, MetaData
 
 metadata = MetaData()
 
