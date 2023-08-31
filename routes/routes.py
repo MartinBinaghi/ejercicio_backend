@@ -1,13 +1,10 @@
-from sqlalchemy import func, select
-
 from fastapi import APIRouter
-from typing import List
-
+from sqlalchemy import func, select
 from starlette.status import HTTP_204_NO_CONTENT
 
+from models.models import data
 from config.db import conn
 from schemas.schema import Book
-from models.models import data
 
 main = APIRouter()
 
@@ -46,6 +43,6 @@ def modify_text(book: Book, my_target_field: str):
     return conn.execute(data.select().where(data.c.id == result.lastrowid)).first()
 
 @main.delete("/delete/{id}", tags=["data"], status_code=HTTP_204_NO_CONTENT)
-def delete_book(id: str):
+def delete_book(id: int):
     conn.execute(data.delete().where(data.c.id == id))
     return conn.execute(data.select().where(data.c.id == id)).first()

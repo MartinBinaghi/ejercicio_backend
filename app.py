@@ -1,8 +1,5 @@
 from fastapi import FastAPI
-from schemas.schema import *
-from routes.routes import *
-from models.models import *
-from config.db import *
+from routes.routes import main
 
 app = FastAPI()
 
