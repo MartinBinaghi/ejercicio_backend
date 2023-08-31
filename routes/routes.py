@@ -1,31 +1,51 @@
-from fastapi import APIRouter, HTTPException
+from sqlalchemy import func, select
+
+from fastapi import APIRouter
+from typing import List
+
+from starlette.status import HTTP_204_NO_CONTENT
+
 from config.db import conn
-from models.models import book
 from schemas.schema import Book
+from models.models import data
 
 main = APIRouter()
 
-@main.get("/get_data/{id}")
-async def get_data(id: int):
-    query = book.select().where(book.c.id == id)
-    return conn.execute(query).fetchone()
+@main.get(
+    "/get_data/{id}",
+    tags=["data"],
+    response_model=Book,
+    description="Get a single book by Id",
+)
+def get_book(id: str):
+    return conn.execute(data.select().where(data.c.id == id)).first()
 
-@main.post("/input/{my_target_field}")
-async def modify_text(book: Book, my_target_field: str, data: dict):
+@main.post("/input/{my_target_field}", tags=["data"], response_model=Book)
+def modify_text(book: Book, my_target_field: str):
     
-    valid_fields = ["field_1", "author", "description"]
-    if my_target_field not in valid_fields:
+    if my_target_field == "field_1":
+        modified_text = book.field_1.upper()
+        book.field_1 = modified_text
+    elif my_target_field == "author":
+        modified_text = book.author.upper()
+        book.author = modified_text
+    elif my_target_field == "description":
+        modified_text = book.description.upper()
+        book.description = modified_text
+    else:
         return {"error": (my_target_field) + " no es un campo válido para convertir a mayúsculas"}
+
+    new_value = {        
+        "field_1": book.field_1,
+        "author": book.author,
+        "description": book.description,
+        "my_numeric_field": book.my_numeric_field,
+        }
     
-    modified_text = data[my_target_field].upper()
-    data[my_target_field] = modified_text
+    result = conn.execute(data.insert().values(new_value))
+    return conn.execute(data.select().where(data.c.id == result.lastrowid)).first()
 
-    query = book.insert().values(
-        field_1 = data["field_1"],
-        author = data["author"],
-        description = data["description"],
-        my_numeric_field = data["my_numeric_field"]
-    )
-
-    conn.execute(query)
-    return conn.execute("SELECT * FROM book ORDER BY id DESC LIMIT 1").fetchone()
+@main.delete("/delete/{id}", tags=["data"], status_code=HTTP_204_NO_CONTENT)
+def delete_book(id: str):
+    conn.execute(data.delete().where(data.c.id == id))
+    return conn.execute(data.select().where(data.c.id == id)).first()
